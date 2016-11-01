@@ -4,9 +4,9 @@ ENV ASPNETCORE_URLS http://+:5000
 
 CMD ["dotnet", "webapp.dll"]
 
-#COPY /publish /src/publish
+COPY /publish /src/publish
 
-WORKDIR /root/publish
+WORKDIR /src/publish
 
 #CMD dotnet restore
 #CMD dotnet run
