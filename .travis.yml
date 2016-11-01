@@ -1,0 +1,31 @@
+branches:
+    only:
+        - master
+
+cache:
+    directories:
+        - $HOME/cache
+    
+sudo: required
+
+services:
+    - docker
+
+before_install:
+    - openssl aes-256-cbc -K $encrypted_1fc90f464345_key -iv $encrypted_1fc90f464345_iv -in id_rsa.enc -out id_rsa -d
+    - eval "$(ssh-agent -s)"
+    - chmod 600 id_rsa
+    - ssh-add id_rsa
+
+script:
+    - docker build -t webapp:test -f ./dockerfile/test .
+    - docker run -it --rm -v $PWD/publish:/root/publish -v $PWD/cache:/root/.nuget/packages webapp:test
+    - docker build -t webapp:release -f ./dockerfile/release 
+
+after_success:
+    - docker tag webapp:release charlesmcd/webapp:release
+    - docker login -u=charlesmcd -p=$mdpDockerHub
+    - docker push charlesmcd/webapp:release
+    - scp -o StrictHostKeyChecking=no ./scripts/getReleaseFromDockerHubAndStart.sh u1334407@159.203.33.172:~/
+    - ssh u1334407@159.203.33.172 "chmod +x getReleaseFromDockerHubAndStart.sh"
+    - ssh u1334407@159.203.33.172 "sh getReleaseFromDockerHubAndStart.sh"
